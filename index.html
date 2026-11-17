@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de descuento bancario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9eef3; --card:#ffffff; --ink:#13202b; --muted:#5b6b78; --line:#cfd9e2;
+  --vp:#0f7a5c; --dr:#c4501b; --field:#f4f7fa; --focus:#1b4fd6;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0e161d; --card:#16212b; --ink:#e8eef3; --muted:#93a4b3; --line:#2a3947;
+    --vp:#4fd1a5; --dr:#ff8f5c; --field:#0f1a23; --focus:#6f96ff;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0e161d; --card:#16212b; --ink:#e8eef3; --muted:#93a4b3; --line:#2a3947;
+  --vp:#4fd1a5; --dr:#ff8f5c; --field:#0f1a23; --focus:#6f96ff;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+main{max-width:720px;margin:0 auto;padding:28px 18px 48px}
+h1{font-family:"Bricolage Grotesque","Instrument Sans",system-ui,sans-serif;font-weight:700;font-size:clamp(1.9rem,6vw,2.7rem);line-height:1.1;margin:0 0 8px;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0 0 24px;max-width:60ch}
+.formula{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:1.25rem;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:0 0 20px;display:inline-block}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+label{display:block;font-weight:600;font-size:.92rem;margin-bottom:6px}
+.hint{font-weight:400;color:var(--muted);font-size:.82rem}
+input,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:9px;padding:11px 12px;font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.result{margin-top:20px}
+.big{display:flex;flex-wrap:wrap;gap:12px}
+.big>div{flex:1 1 220px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.big small{color:var(--muted);display:block;margin-bottom:2px}
+.num{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:clamp(1.7rem,6vw,2.4rem);letter-spacing:-.02em;font-variant-numeric:tabular-nums;word-break:break-all}
+.vp .num{color:var(--vp)} .dr .num{color:var(--dr)}
+.bar{display:flex;height:34px;border-radius:9px;overflow:hidden;margin:18px 0 8px;border:1px solid var(--line)}
+.bar i{display:block;height:100%;transition:width .35s ease}
+.bar .a{background:var(--vp)} .bar .b{background:var(--dr)}
+.legend{display:flex;justify-content:space-between;gap:12px;font-size:.85rem;color:var(--muted);flex-wrap:wrap}
+.legend b{color:var(--ink)}
+.steps{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-variant-numeric:tabular-nums}
+.steps h2{font-size:1rem;margin:0 0 8px}
+.steps p{margin:4px 0;overflow-wrap:anywhere}
+.err{color:var(--dr);font-weight:600;margin-top:14px}
+.note{color:var(--muted);font-size:.85rem;margin-top:18px}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Descuento bancario</h1>
+  <p class="sub">Calcula el valor efectivo que recibes por un documento que vence en el futuro, cuando el banco aplica la tasa de descuento sobre el valor final (nominal).</p>
+  <div class="formula">VE = F · (1 − d · t)</div>
+
+  <div class="panel">
+    <div class="grid">
+      <div>
+        <label for="F">Valor final F <span class="hint">(valor nominal al vencimiento)</span></label>
+        <input id="F" type="number" inputmode="decimal" min="0" step="any" value="10000">
+      </div>
+      <div>
+        <label for="dias">Días para el vencimiento t</label>
+        <input id="dias" type="number" inputmode="numeric" min="0" step="1" value="90">
+      </div>
+      <div>
+        <label for="d">Tasa de descuento d <span class="hint">(en %)</span></label>
+        <input id="d" type="number" inputmode="decimal" min="0" step="any" value="18">
+      </div>
+      <div>
+        <label for="per">Período de la tasa</label>
+        <select id="per">
+          <option value="360">Anual (año de 360 días)</option>
+          <option value="365">Anual (año de 365 días)</option>
+          <option value="30">Mensual (mes de 30 días)</option>
+          <option value="1">Diaria</option>
+        </select>
+      </div>
+    </div>
+    <div id="err" class="err" role="alert" hidden></div>
+  </div>
+
+  <div class="result" id="out">
+    <div class="big">
+      <div class="vp"><small>Valor efectivo (VE)</small><div class="num" id="ve">—</div></div>
+      <div class="dr"><small>Descuento bancario (Db = F − VE)</small><div class="num" id="db">—</div></div>
+    </div>
+    <div class="bar" aria-hidden="true"><i class="a" id="ba" style="width:100%"></i><i class="b" id="bb" style="width:0"></i></div>
+    <div class="legend"><span>Valor efectivo: <b id="pa">—</b></span><span>Descuento: <b id="pb">—</b></span></div>
+
+    <div class="steps">
+      <h2>Procedimiento</h2>
+      <p id="s1"></p><p id="s2"></p><p id="s3"></p><p id="s4"></p>
+    </div>
+  </div>
+
+  <p class="note">La tasa se convierte a tasa diaria dividiéndola entre los días del período elegido, ya que la fórmula multiplica d por los días de vencimiento.</p>
+</main>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var money=new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2,maximumFractionDigits:2});
+  var dec=function(x,k){return x.toLocaleString("es-MX",{maximumFractionDigits:k,minimumFractionDigits:0})};
+  var pct=function(x){return dec(x,2)+" %"};
+
+  function calc(){
+    var F=parseFloat($("F").value), t=parseFloat($("dias").value),
+        dPct=parseFloat($("d").value), base=parseFloat($("per").value);
+    var err=$("err");
+    if([F,t,dPct].some(isNaN) || F<0 || t<0 || dPct<0){
+      err.hidden=false;
+      err.textContent="Escribe valores numéricos positivos en todos los campos.";
+      $("out").style.visibility="hidden";
+      return;
+    }
+    var dDia=(dPct/100)/base;
+    var factor=1-dDia*t;
+    if(factor<=0){
+      err.hidden=false;
+      err.textContent="Con esa tasa y esos días, d · t es mayor o igual a 1 y el valor efectivo sería cero o negativo. Reduce la tasa o los días.";
+      $("out").style.visibility="hidden";
+      return;
+    }
+    err.hidden=true; $("out").style.visibility="visible";
+    var VE=F*factor, Db=F-VE;
+
+    $("ve").textContent=money.format(VE);
+    $("db").textContent=money.format(Db);
+    var p=factor*100;
+    $("ba").style.width=p+"%"; $("bb").style.width=(100-p)+"%";
+    $("pa").textContent=pct(p); $("pb").textContent=pct(100-p);
+
+    $("s1").textContent="1) Tasa diaria: d = "+dec(dPct,4)+" % ÷ "+base+" = "+dec(dDia*100,6)+" % = "+dec(dDia,8);
+    $("s2").textContent="2) Factor: 1 − d · t = 1 − "+dec(dDia,8)+" × "+dec(t,0)+" = "+dec(factor,8);
+    $("s3").textContent="3) VE = "+money.format(F)+" × "+dec(factor,8)+" = "+money.format(VE);
+    $("s4").textContent="4) Db = F − VE = "+money.format(F)+" − "+money.format(VE)+" = "+money.format(Db);
+  }
+  ["F","dias","d","per"].forEach(function(id){$(id).addEventListener("input",calc);$(id).addEventListener("change",calc)});
+  calc();
+})();
+</script>
+</body>
+</html>
